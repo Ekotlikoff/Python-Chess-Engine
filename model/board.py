@@ -14,6 +14,7 @@ BOARD_DIMENSION = 8
 class Board:
   def __init__(self):
     self.board = [[None for x in range(BOARD_DIMENSION)] for x in range(BOARD_DIMENSION)]
+    self.previous_move = None
     self.init_board()
 
   def is_position_in_bounds(self, position):
@@ -36,6 +37,9 @@ class Board:
   def get_king(self, color):
     pieces = self.get_pieces(color)
     return next((piece for piece in pieces if piece.get_name() == Pieces.KING))
+
+  def get_previous_move(self):
+    return self.previous_move
 
   def is_position_empty(self, position):
     return self.get(position) is None
@@ -69,19 +73,16 @@ class Board:
     valid_move.piece.set_position(new_position)
     self.board[old_position[0]][old_position[1]] = None
     if valid_move.get_promoting_to() is not None:
-      print('PROMOTING TO IS NOT NONE')
       self.board[new_position[0]][new_position[1]] = valid_move.get_promoting_to()
     else:
       self.board[new_position[0]][new_position[1]] = valid_move.piece
-    castling_with = move.get_castling_with()
-    if castling_with is not None:
-      self.handle_castle(castling_with, old_position)
-    color = move.get_piece().get_color()
-    if self.is_color_at_position_attacked(color, self.get_king(color).get_position()):
+    self.handle_castle(move.get_castling_with(), old_position)
+    moving_color = move.get_piece().get_color()
+    if self.is_color_at_position_attacked(moving_color, self.get_king(moving_color).get_position()):
       print('Move results in check, thus invalid')
       self.board = old_board
-      print(self)
       return False
+    previous_move = move
     return True
 
   def is_castle_through_check(self, move):
@@ -94,6 +95,8 @@ class Board:
     return any(self.is_color_at_position_attacked(move.get_piece().get_color(), position) for position in king_positions)
 
   def handle_castle(self, castling_with, old_king_position):
+    if castling_with is None:
+      return
     direction = -1 if castling_with.get_position()[0] < old_king_position[0] else 1
     old_rook_position = castling_with.get_position()
     new_rook_position = (old_king_position[0] + direction, old_king_position[1])
