@@ -26,6 +26,9 @@ class Board:
     except:
       return None
 
+  def set(self, position, piece):
+    self.board[position[0]][position[1]] = piece
+
   def get_pieces(self, color):
     pieces = []
     for file in self.board:
@@ -67,20 +70,22 @@ class Board:
     if self.is_castle_through_check(move):
       print('Attempting to castle through check, thus invalid')
       return False
-    old_board = deepcopy(self.board)
     old_position = valid_move.get_piece().get_position()
+    old_position_copy = deepcopy(valid_move.get_piece())
     new_position = valid_move.get_new_position()
+    new_position_copy = deepcopy(self.get(new_position))
     valid_move.piece.set_position(new_position)
-    self.board[old_position[0]][old_position[1]] = None
+    self.set(old_position, None)
     if valid_move.get_promoting_to() is not None:
-      self.board[new_position[0]][new_position[1]] = valid_move.get_promoting_to()
+      self.set(new_position, valid_move.get_promoting_to())
     else:
-      self.board[new_position[0]][new_position[1]] = valid_move.piece
+      self.set(new_position, valid_move.get_piece())
     self.handle_castle(move.get_castling_with(), old_position)
     moving_color = move.get_piece().get_color()
     if self.is_color_at_position_attacked(moving_color, self.get_king(moving_color).get_position()):
       print('Move results in check, thus invalid')
-      self.board = old_board
+      self.set(old_position, old_position_copy)
+      self.set(new_position, new_position_copy)
       return False
     previous_move = move
     return True
@@ -101,8 +106,8 @@ class Board:
     old_rook_position = castling_with.get_position()
     new_rook_position = (old_king_position[0] + direction, old_king_position[1])
     castling_with.set_position(new_rook_position)
-    self.board[old_rook_position[0]][old_rook_position[1]] = None
-    self.board[new_rook_position[0]][new_rook_position[1]] = castling_with
+    self.set(old_rook_position, None)
+    self.set(new_rook_position, castling_with)
 
   def init_board(self):
     for index, file in enumerate(self.board):
