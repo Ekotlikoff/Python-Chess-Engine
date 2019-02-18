@@ -42,8 +42,8 @@ class Board:
 
   def get_pieces(self, color):
     pieces = []
-    for file in self.board:
-      for piece in file:
+    for chess_file in self.board:
+      for piece in chess_file:
         if piece is not None and piece.get_color() is color:
           pieces.append(piece)
     return pieces
@@ -66,7 +66,6 @@ class Board:
     valid_moves = []
     for opposing_piece in opposing_pieces:
       valid_moves += opposing_piece.get_moves()
-    check_moves = [valid_move for valid_move in valid_moves if valid_move.get_new_position() == position]
     return any(valid_move.get_new_position() == position for valid_move in valid_moves)
 
   def handle_move(self, move):
@@ -79,17 +78,17 @@ class Board:
     except StopIteration:
       print('ERROR: Invalid move.')
       return False
-    if self.is_castle_through_check(move):
+    if self.is_castle_through_check(valid_move):
       print('Attempting to castle through check, thus invalid')
       return False
-    undo_data = self.make_move(move)
-    moving_color = move.get_piece().get_color()
+    undo_data = self.make_move(valid_move)
+    moving_color = valid_move.get_piece().get_color()
     if self.is_color_at_position_attacked(moving_color, self.get_king(moving_color).get_position()):
       print('Move results in check, thus invalid')
       self.undo_move(undo_data)
       return False
-    move.get_piece().set_has_moved()
-    self.previous_move = move
+    valid_move.get_piece().set_has_moved()
+    self.previous_move = valid_move
     return True
 
   def does_move_result_in_check(self, move):
@@ -113,13 +112,16 @@ class Board:
       self.set(new_position, move.get_promoting_to())
     else:
       self.set(new_position, move.get_piece())
-    self.handle_castle(move.get_castling_with(), old_position)
-    return [(old_position, old_piece), (new_position, new_piece), (captured_position, captured_piece)]
+    rook_data = self.handle_castle(move.get_castling_with(), old_position)
+    return [(old_position, old_piece), (new_position, new_piece), (captured_position, captured_piece), rook_data]
 
   def undo_move(self, undo_data):
-    [(old_position, old_piece), (new_position, new_piece), (captured_position, captured_piece)] = undo_data
+    [(old_position, old_piece), (new_position, new_piece), (captured_position, captured_piece), (old_rook_position, rook)] = undo_data
     self.set(old_position, old_piece)
     self.set(new_position, new_piece)
+    if old_rook_position is not None:
+      self.set(rook.get_position(), None)
+      self.set(old_rook_position, rook)
     if captured_position is not None and new_position != captured_position:
       self.set(captured_position, captured_piece)
 
@@ -134,40 +136,43 @@ class Board:
 
   def handle_castle(self, castling_with, old_king_position):
     if castling_with is None:
-      return
+      return (None, None)
     direction = -1 if castling_with.get_position()[0] < old_king_position[0] else 1
     old_rook_position = castling_with.get_position()
     new_rook_position = (old_king_position[0] + direction, old_king_position[1])
     castling_with.set_position(new_rook_position)
     self.set(old_rook_position, None)
     self.set(new_rook_position, castling_with)
+    return (old_rook_position, castling_with)
 
   def init_board(self):
-    for index, file in enumerate(self.board):
-      file[1] = Pawn(board=self, position=(index, 1), color=Color.WHITE)
-      file[6] = Pawn(board=self, position=(index, 6), color=Color.BLACK)
+    for index, chess_file in enumerate(self.board):
+      chess_file[1] = Pawn(board=self, position=(index, 1), color=Color.WHITE)
+      chess_file[6] = Pawn(board=self, position=(index, 6), color=Color.BLACK)
       if index == 0 or index == 7:
-        file[0] = Rook(board=self, position=(index, 0), color=Color.WHITE)
-        file[7] = Rook(board=self, position=(index, 7), color=Color.BLACK)
+        chess_file[0] = Rook(board=self, position=(index, 0), color=Color.WHITE)
+        chess_file[7] = Rook(board=self, position=(index, 7), color=Color.BLACK)
       if index == 1 or index == 6:
-        file[0] = Knight(board=self, position=(index, 0), color=Color.WHITE)
-        file[7] = Knight(board=self, position=(index, 7), color=Color.BLACK)
+        chess_file[0] = Knight(board=self, position=(index, 0), color=Color.WHITE)
+        chess_file[7] = Knight(board=self, position=(index, 7), color=Color.BLACK)
       if index == 2 or index == 5:
-        file[0] = Bishop(board=self, position=(index, 0), color=Color.WHITE)
-        file[7] = Bishop(board=self, position=(index, 7), color=Color.BLACK)
+        chess_file[0] = Bishop(board=self, position=(index, 0), color=Color.WHITE)
+        chess_file[7] = Bishop(board=self, position=(index, 7), color=Color.BLACK)
       if index == 3:
-        file[0] = Queen(board=self, position=(index, 0), color=Color.WHITE)
-        file[7] = King(board=self, position=(index, 7), color=Color.BLACK)
+        chess_file[0] = Queen(board=self, position=(index, 0), color=Color.WHITE)
+        chess_file[7] = King(board=self, position=(index, 7), color=Color.BLACK)
       if index == 4:
-        file[0] = King(board=self, position=(index, 0), color=Color.WHITE)
-        file[7] = Queen(board=self, position=(index, 7), color=Color.BLACK)
+        chess_file[0] = King(board=self, position=(index, 0), color=Color.WHITE)
+        chess_file[7] = Queen(board=self, position=(index, 7), color=Color.BLACK)
 
   def __str__(self):
     out = ''
     for rank_index in reversed(range(BOARD_DIMENSION)):
       line = ''
-      for file in self.board:
-        piece = file[rank_index]
+      for file_index, chess_file in enumerate(self.board):
+        piece = chess_file[rank_index]
+        if piece is not None:
+          assert piece.get_position() == (file_index, rank_index)
         color = Colors.WHITE if piece is None or piece.get_color() is Color.WHITE else Colors.BLACK
         line += color + '{:<15}'.format(str(piece)) + Colors.ENDC if piece is not None else '{:<15}'.format(str(piece))
       line += '\n' * 4
