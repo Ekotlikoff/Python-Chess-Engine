@@ -16,5 +16,5 @@ class Knight(Piece):
       if self.board.is_position_in_bounds(new_position) and self.board.is_position_empty(new_position):
         valid_moves.append(Move(self, new_position, False))
       elif self.board.is_position_in_bounds(new_position) and self.board.get(new_position).color is not self.color:
-        valid_moves.append(Move(self, new_position, True))
+        valid_moves.append(Move(self, new_position, True, capturing_position=new_position))
     return valid_moves

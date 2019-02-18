@@ -36,5 +36,4 @@ class ChessEngine():
     for piece in my_pieces:
       valid_moves += piece.get_valid_moves()
     next_move = random.choice(valid_moves)
-    print(next_move)
     game.make_move(self, next_move)

@@ -48,7 +48,7 @@ class Piece:
         new_position = (new_position[0] + vector[0], new_position[1] + vector[1])
         current_slide_length += 1
       if can_attack and self.can_slide(current_slide_length, max_slide_length) and self.board.is_position_in_bounds(new_position) and self.board.get(new_position).color is not self.color:
-        valid_moves.append(Move(self, new_position, True))
+        valid_moves.append(Move(self, new_position, True, capturing_position=new_position))
     return valid_moves
 
   def can_move_without_taking(self, new_position, current_slide_length, max_slide_length):

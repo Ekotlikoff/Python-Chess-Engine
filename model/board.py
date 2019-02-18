@@ -74,8 +74,13 @@ class Board:
     old_position_copy = deepcopy(valid_move.get_piece())
     new_position = valid_move.get_new_position()
     new_position_copy = deepcopy(self.get(new_position))
+    capturing_position = valid_move.get_capturing_position()
+    capturing_position_copy = deepcopy(None if capturing_position is None else self.get(new_position))
+    new_position_copy = deepcopy(self.get(new_position))
     valid_move.piece.set_position(new_position)
     self.set(old_position, None)
+    if capturing_position is not None:
+      self.set(capturing_position, None)
     if valid_move.get_promoting_to() is not None:
       self.set(new_position, valid_move.get_promoting_to())
     else:
@@ -86,8 +91,10 @@ class Board:
       print('Move results in check, thus invalid')
       self.set(old_position, old_position_copy)
       self.set(new_position, new_position_copy)
+      if capturing_position is not None and new_position != capturing_position:
+        self.set(capturing_position, capturing_position_copy)
       return False
-    previous_move = move
+    self.previous_move = move
     return True
 
   def is_castle_through_check(self, move):
