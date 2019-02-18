@@ -2,11 +2,13 @@ from model.color import Color
 from model.board import Board
 import random
 import time
+import threading
 
 DEFAULT_TIME_PER_PLAYER = 60 * 20
 
 class Game:
   def __init__(self, player_one, player_two, time_per_player=DEFAULT_TIME_PER_PLAYER):
+    self.player_lock = threading.Lock()
     self.board = Board()
     self.game_over = False
     self.player_one = player_one
@@ -25,6 +27,8 @@ class Game:
       self.current_turn = self.player_two
     self.player_one.set_game(self)
     self.player_two.set_game(self)
+    self.player_one.set_lock(self.player_lock)
+    self.player_two.set_lock(self.player_lock)
     self.game_running = False
 
   def get_current_turn(self):
@@ -64,8 +68,6 @@ class Game:
         print('Time elapsed for player: ' + self.player_two.get_name() + ', ' + str(self.time_elapsed_player_two))
         print(self.board)
 
-  # TODO detect end of game by insufficient material
-
   def run(self):
     print(self.board)
     self.turn_start = time.process_time()
@@ -88,4 +90,5 @@ class Game:
           print('Checkmate!')
           self.game_over = True
           self.winner = self.player_one
+    self.game_running = False
     print('WINNER IS ' + self.winner.name)

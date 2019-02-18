@@ -15,16 +15,22 @@ class HumanPlayer():
   def get_name(self):
     return self.name
 
+  def set_lock(self, lock):
+    self.lock = lock
+
   def start(self):
     self.thread.start()
 
   def run(self):
     print('Welcome, ' + self.get_name() + ', your color is: ' + str(self.color))
-    while not self.game.is_game_over():
-      if self.game.is_game_running() and self.game.get_current_turn() is self:
-        self.choose_move(self.game)
-      else:
-        time.sleep(.05)
+    while True:
+      with self.lock:
+        if self.game.is_game_running() and self.game.get_current_turn() is self:
+          self.choose_move(self.game)
+        elif self.game.is_game_over():
+          return
+        else:
+          time.sleep(.05)
 
   def set_color(self, color):
     self.color = color
