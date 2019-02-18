@@ -7,5 +7,5 @@ class Queen(Piece):
     super().__init__(**kwargs, name=Pieces.QUEEN)
     self.valid_slide_vectors = [(1, 1), (-1, 1), (1, -1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)]
 
-  def get_valid_moves(self):
+  def get_moves(self):
     return self.get_valid_moves_slide()

@@ -4,14 +4,14 @@ from .piece import Piece
 from .queen import Queen
 from .knight import Knight
 from .constants import Pieces
-from copy import deepcopy
+from copy import copy
 
 class Pawn(Piece):
   def __init__(self, **kwargs):
     super().__init__(**kwargs, name=Pieces.PAWN)
     self.valid_slide_vectors = [(0, self.color.value)]
 
-  def get_valid_moves(self):
+  def get_moves(self):
     max_slide_length = 1 if self.has_moved else 2
     valid_moves = self.get_valid_moves_slide(max_slide_length=max_slide_length, can_attack=False)
     attacking_positions = [(self.position[0] + x, self.position[1] + self.color.value) for x in [1, -1]]
@@ -24,9 +24,14 @@ class Pawn(Piece):
       new_piece = self.get_promoting_piece(promoting_move)
       new_knight_piece = self.get_promoting_knight_piece(promoting_move)
       promoting_move.set_promoting_to(new_piece)
-      knight_promoting_move = deepcopy(promoting_move)
+      knight_promoting_move = copy(promoting_move)
+      knight_promoting_move.get_piece().set_board(self.get_board())
       knight_promoting_move.set_promoting_to(new_knight_piece)
+      knight_promoting_move.set_piece(self)
       valid_moves.append(knight_promoting_move)
+      for move in valid_moves:
+        assert move.get_piece().get_board() is self.get_board()
+        assert move.get_piece() is self
     en_passant = self.get_en_passant()
     if en_passant is not None:
       valid_moves.append(en_passant)

@@ -2,7 +2,7 @@
 
 TODO:
 
-- checkmate detection
+- Travis CI integration
 - insufficient material detection
 - smarter chess engine
 - too many repeated moves

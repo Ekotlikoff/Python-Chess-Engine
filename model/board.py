@@ -7,7 +7,6 @@ from .pieces.bishop import Bishop
 from .pieces.king import King
 from .pieces.queen import Queen
 from .pieces.constants import Pieces
-from copy import deepcopy
 
 BOARD_DIMENSION = 8
 
@@ -28,6 +27,18 @@ class Board:
 
   def set(self, position, piece):
     self.board[position[0]][position[1]] = piece
+    if piece is not None:
+      piece.set_position(position)
+
+  def is_checkmated(self, color):
+    return self.is_in_check(color) and not self.get_all_valid_moves(color)
+
+  def get_all_valid_moves(self, color):
+    pieces = self.get_pieces(color)
+    valid_moves = []
+    for piece in pieces:
+      valid_moves += piece.get_valid_moves()
+    return valid_moves
 
   def get_pieces(self, color):
     pieces = []
@@ -47,14 +58,15 @@ class Board:
   def is_position_empty(self, position):
     return self.get(position) is None
 
+  def is_in_check(self, color):
+    return self.is_color_at_position_attacked(color, self.get_king(color).get_position())
+
   def is_color_at_position_attacked(self, color, position):
     opposing_pieces = self.get_pieces(Color.WHITE if color == Color.BLACK else Color.BLACK)
     valid_moves = []
     for opposing_piece in opposing_pieces:
-      valid_moves += opposing_piece.get_valid_moves()
+      valid_moves += opposing_piece.get_moves()
     check_moves = [valid_move for valid_move in valid_moves if valid_move.get_new_position() == position]
-    if len(check_moves) > 0:
-      print(check_moves[0])
     return any(valid_move.get_new_position() == position for valid_move in valid_moves)
 
   def handle_move(self, move):
@@ -70,32 +82,46 @@ class Board:
     if self.is_castle_through_check(move):
       print('Attempting to castle through check, thus invalid')
       return False
-    old_position = valid_move.get_piece().get_position()
-    old_position_copy = deepcopy(valid_move.get_piece())
-    new_position = valid_move.get_new_position()
-    new_position_copy = deepcopy(self.get(new_position))
-    capturing_position = valid_move.get_capturing_position()
-    capturing_position_copy = deepcopy(None if capturing_position is None else self.get(new_position))
-    new_position_copy = deepcopy(self.get(new_position))
-    valid_move.piece.set_position(new_position)
-    self.set(old_position, None)
-    if capturing_position is not None:
-      self.set(capturing_position, None)
-    if valid_move.get_promoting_to() is not None:
-      self.set(new_position, valid_move.get_promoting_to())
-    else:
-      self.set(new_position, valid_move.get_piece())
-    self.handle_castle(move.get_castling_with(), old_position)
+    undo_data = self.make_move(move)
     moving_color = move.get_piece().get_color()
     if self.is_color_at_position_attacked(moving_color, self.get_king(moving_color).get_position()):
       print('Move results in check, thus invalid')
-      self.set(old_position, old_position_copy)
-      self.set(new_position, new_position_copy)
-      if capturing_position is not None and new_position != capturing_position:
-        self.set(capturing_position, capturing_position_copy)
+      self.undo_move(undo_data)
       return False
+    move.get_piece().set_has_moved()
     self.previous_move = move
     return True
+
+  def does_move_result_in_check(self, move):
+    moving_color = move.get_piece().get_color()
+    undo_data = self.make_move(move)
+    results_in_check = self.is_in_check(moving_color)
+    self.undo_move(undo_data)
+    return results_in_check
+
+  def make_move(self, move):
+    old_position = move.get_piece().get_position()
+    old_piece = move.get_piece()
+    new_position = move.get_new_position()
+    new_piece = self.get(new_position)
+    captured_position = move.get_capturing_position()
+    captured_piece = None if captured_position is None else self.get(captured_position)
+    self.set(old_position, None)
+    if captured_position is not None:
+      self.set(captured_position, None)
+    if move.get_promoting_to() is not None:
+      self.set(new_position, move.get_promoting_to())
+    else:
+      self.set(new_position, move.get_piece())
+    self.handle_castle(move.get_castling_with(), old_position)
+    return [(old_position, old_piece), (new_position, new_piece), (captured_position, captured_piece)]
+
+  def undo_move(self, undo_data):
+    [(old_position, old_piece), (new_position, new_piece), (captured_position, captured_piece)] = undo_data
+    self.set(old_position, old_piece)
+    self.set(new_position, new_piece)
+    if captured_position is not None and new_position != captured_position:
+      self.set(captured_position, captured_piece)
 
   def is_castle_through_check(self, move):
     king_position = move.get_piece().get_position()

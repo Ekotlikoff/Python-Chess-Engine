@@ -53,23 +53,22 @@ class Game:
       return
     if player is self.current_turn:
       if self.board.handle_move(move):
-        time_elapsed = time.clock() - self.turn_start
+        time_elapsed = time.process_time() - self.turn_start
         if self.current_turn is self.player_one:
-          self.time_elapsed_player_one += 1000 * time_elapsed
+          self.time_elapsed_player_one += time_elapsed
         else:
-          self.time_elapsed_player_two += 1000 * time_elapsed
+          self.time_elapsed_player_two += time_elapsed
         self.switch_current_turn()
-        self.turn_start = time.clock()
+        self.turn_start = time.process_time()
         print('Time elapsed for player: ' + self.player_one.get_name() + ', ' + str(self.time_elapsed_player_one))
         print('Time elapsed for player: ' + self.player_two.get_name() + ', ' + str(self.time_elapsed_player_two))
         print(self.board)
 
   # TODO detect end of game by insufficient material
-  # TODO detect end of game by checkmate
 
   def run(self):
     print(self.board)
-    self.turn_start = time.clock()
+    self.turn_start = time.process_time()
     self.game_running = True
     while not self.game_over:
       time.sleep(.05)
@@ -77,8 +76,16 @@ class Game:
         if self.time_elapsed_player_one > self.time_per_player:
           self.game_over = True
           self.winner = self.player_two
+        elif self.board.is_checkmated(self.player_one.get_color()):
+          print('Checkmate!')
+          self.game_over = True
+          self.winner = self.player_two
       else:
         if self.time_elapsed_player_two > self.time_per_player:
+          self.game_over = True
+          self.winner = self.player_one
+        elif self.board.is_checkmated(self.player_two.get_color()):
+          print('Checkmate!')
           self.game_over = True
           self.winner = self.player_one
     print('WINNER IS ' + self.winner.name)

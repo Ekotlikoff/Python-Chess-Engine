@@ -17,6 +17,9 @@ class Move:
   def get_piece(self):
     return self.piece
 
+  def set_piece(self, piece):
+    self.piece = piece
+
   def get_capturing_position(self):
     return self.capturing_position
 

@@ -29,10 +29,13 @@ class HumanPlayer():
   def set_color(self, color):
     self.color = color
 
+  def get_color(self):
+    return self.color
+
   def choose_move(self, game):
     if self.color is None:
       raise ValueError("Player must know their color")
-    human_coordinates = input('Enter your move in coordinate notation, e.g. e2-e4: ')
+    human_coordinates = input('Enter your move in coordinate notation, e.g. e2-e4: \n')
     move = self.human_coordinates_to_move(human_coordinates)
     my_pieces = game.get_board().get_pieces(self.color)
     valid_moves = []

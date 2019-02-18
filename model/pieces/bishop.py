@@ -8,5 +8,5 @@ class Bishop(Piece):
     super().__init__(**kwargs, name=Pieces.BISHOP)
     self.valid_slide_vectors = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
 
-  def get_valid_moves(self):
+  def get_moves(self):
     return self.get_valid_moves_slide()

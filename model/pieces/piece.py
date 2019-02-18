@@ -30,12 +30,20 @@ class Piece:
   def get_board(self):
     return self.board
 
+  def set_board(self, board):
+    self.board = board
+
   def has_piece_moved(self):
     return self.has_moved
 
+  def set_has_moved(self):
+    self.has_moved = True
+
   def set_position(self, new_position):
     self.position = new_position
-    self.has_moved = True
+
+  def get_valid_moves(self):
+    return [move for move in self.get_moves() if not self.get_board().does_move_result_in_check(move)]
 
   def get_valid_moves_slide(self, max_slide_length=None, can_attack=True):
     valid_moves = []

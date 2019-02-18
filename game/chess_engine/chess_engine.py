@@ -27,13 +27,13 @@ class ChessEngine():
   def set_color(self, color):
     self.color = color
 
+  def get_color(self):
+    return self.color
+
   def choose_move(self, game):
     if self.color is None:
       print("Invalid state, player must know their color")
       raise ValueError("Player must know their color")
-    my_pieces = game.get_board().get_pieces(self.color)
-    valid_moves = []
-    for piece in my_pieces:
-      valid_moves += piece.get_valid_moves()
+    valid_moves = game.get_board().get_all_valid_moves(self.color)
     next_move = random.choice(valid_moves)
     game.make_move(self, next_move)
