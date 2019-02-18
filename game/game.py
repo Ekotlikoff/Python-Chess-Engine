@@ -11,25 +11,29 @@ class Game:
     self.player_lock = threading.Lock()
     self.board = Board()
     self.game_over = False
-    self.player_one = player_one
-    self.time_elapsed_player_one = 0
-    self.player_two = player_two
-    self.time_elapsed_player_two = 0
     self.time_per_player = time_per_player
+    self.player_data = {}
+    self.player_one = player_one
+    self.player_two = player_two
+    self.init_player(player_one)
+    self.init_player(player_two)
     self.total_ply = 0
+    self.game_running = False
     if random.randint(0, 1) is 0:
       self.player_one.set_color(Color.WHITE)
       self.player_two.set_color(Color.BLACK)
-      self.current_turn = self.player_one
+      self.current_turn = player_one
     else:
       self.player_one.set_color(Color.BLACK)
       self.player_two.set_color(Color.WHITE)
-      self.current_turn = self.player_two
-    self.player_one.set_game(self)
-    self.player_two.set_game(self)
-    self.player_one.set_lock(self.player_lock)
-    self.player_two.set_lock(self.player_lock)
-    self.game_running = False
+      self.current_turn = player_two
+
+  def init_player(self, player):
+    self.player_data[player] = {}
+    self.player_data[player]['time_elapsed'] = 0
+    self.player_data[player]['time_elapsed'] = 0
+    player.set_game(self)
+    player.set_lock(self.player_lock)
 
   def get_current_turn(self):
     return self.current_turn
@@ -44,7 +48,7 @@ class Game:
     return self.game_running
 
   def get_time_elapsed(self, player):
-    return self.time_elapsed_player_one if player is self.player_one else self.time_elapsed_player_two
+    return self.player_data[player].time_elapsed
 
   def switch_current_turn(self):
     if self.current_turn is self.player_one:
@@ -59,13 +63,13 @@ class Game:
       if self.board.handle_move(move):
         time_elapsed = time.process_time() - self.turn_start
         if self.current_turn is self.player_one:
-          self.time_elapsed_player_one += time_elapsed
+          self.player_data[self.player_one]['time_elapsed'] += time_elapsed
         else:
-          self.time_elapsed_player_two += time_elapsed
+          self.player_data[self.player_two]['time_elapsed'] += time_elapsed
         self.switch_current_turn()
         self.turn_start = time.process_time()
-        print('Time elapsed for player: ' + self.player_one.get_name() + ', ' + str(self.time_elapsed_player_one))
-        print('Time elapsed for player: ' + self.player_two.get_name() + ', ' + str(self.time_elapsed_player_two))
+        print('Time elapsed for player: ' + self.player_one.get_name() + ', ' + str(self.player_data[self.player_one]['time_elapsed']))
+        print('Time elapsed for player: ' + self.player_two.get_name() + ', ' + str(self.player_data[self.player_two]['time_elapsed']))
         print(self.board)
 
   def run(self):
@@ -75,7 +79,7 @@ class Game:
     while not self.game_over:
       time.sleep(.05)
       if self.current_turn is self.player_one:
-        if self.time_elapsed_player_one > self.time_per_player:
+        if self.player_data[self.player_one]['time_elapsed'] > self.time_per_player:
           self.game_over = True
           self.winner = self.player_two
         elif self.board.is_checkmated(self.player_one.get_color()):
@@ -83,7 +87,7 @@ class Game:
           self.game_over = True
           self.winner = self.player_two
       else:
-        if self.time_elapsed_player_two > self.time_per_player:
+        if self.player_data[self.player_two]['time_elapsed'] > self.time_per_player:
           self.game_over = True
           self.winner = self.player_one
         elif self.board.is_checkmated(self.player_two.get_color()):
