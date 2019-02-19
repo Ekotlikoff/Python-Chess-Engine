@@ -23,12 +23,11 @@ class ChessEngine():
   def run(self):
     while True:
       with self.lock:
-        if self.game.is_game_running() and self.game.get_current_turn() is self:
+        if self.game.is_game_running() and not self.game.is_game_over() and self.game.get_current_turn() is self:
           self.choose_move(self.game)
         elif self.game.is_game_over():
           return
-        else:
-          time.sleep(1)
+      time.sleep(1)
           
 
   def set_color(self, color):
@@ -42,5 +41,7 @@ class ChessEngine():
       print("Invalid state, player must know their color")
       raise ValueError("Player must know their color")
     valid_moves = game.get_board().get_all_valid_moves(self.color)
+    if not valid_moves:
+      return
     next_move = random.choice(valid_moves)
     game.make_move(self, next_move)

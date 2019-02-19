@@ -25,12 +25,11 @@ class HumanPlayer():
     print('Welcome, ' + self.get_name() + ', your color is: ' + str(self.color))
     while True:
       with self.lock:
-        if self.game.is_game_running() and self.game.get_current_turn() is self:
+        if self.game.is_game_running() and not self.game.is_game_over() and self.game.get_current_turn() is self:
           self.choose_move(self.game)
         elif self.game.is_game_over():
           return
-        else:
-          time.sleep(.05)
+      time.sleep(.05)
 
   def set_color(self, color):
     self.color = color

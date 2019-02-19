@@ -3,12 +3,15 @@ from model.board import Board
 import random
 import time
 import threading
+from copy import deepcopy
 
 DEFAULT_TIME_PER_PLAYER = 60 * 20
 
 class Game:
-  def __init__(self, player_one, player_two, time_per_player=DEFAULT_TIME_PER_PLAYER):
-    self.player_lock = threading.Lock()
+  def __init__(self, player_one, player_two, run_as_gui, time_per_player=DEFAULT_TIME_PER_PLAYER):
+    self.thread = threading.Thread(target=self.run)
+    self.run_as_gui = run_as_gui
+    self.lock = threading.Lock()
     self.board = Board()
     self.game_over = False
     self.time_per_player = time_per_player
@@ -33,7 +36,7 @@ class Game:
     self.player_data[player]['time_elapsed'] = 0
     self.player_data[player]['time_elapsed'] = 0
     player.set_game(self)
-    player.set_lock(self.player_lock)
+    player.set_lock(self.lock)
 
   def get_current_turn(self):
     return self.current_turn
@@ -41,11 +44,18 @@ class Game:
   def get_board(self):
     return self.board
 
+  def get_board_safely(self):
+    with self.lock:
+      return deepcopy(self.board)
+
   def is_game_over(self):
     return self.game_over
 
   def is_game_running(self):
     return self.game_running
+
+  def register_view(self, view):
+    self.view = view
 
   def get_time_elapsed(self, player):
     return self.player_data[player].time_elapsed
@@ -68,21 +78,31 @@ class Game:
           self.player_data[self.player_two]['time_elapsed'] += time_elapsed
         self.switch_current_turn()
         self.turn_start = time.process_time()
-        print('Time elapsed for player: ' + self.player_one.get_name() + ', ' + str(self.player_data[self.player_one]['time_elapsed']))
-        print('Time elapsed for player: ' + self.player_two.get_name() + ', ' + str(self.player_data[self.player_two]['time_elapsed']))
-        print(self.board)
+        if not self.run_as_gui:
+          print('Time elapsed for player: ' + self.player_one.get_name() + ', ' + str(self.player_data[self.player_one]['time_elapsed']))
+          print('Time elapsed for player: ' + self.player_two.get_name() + ', ' + str(self.player_data[self.player_two]['time_elapsed']))
+          print(self.board)
+        else:
+          self.view.set_board(deepcopy(self.board))
+  
+  def start(self):
+    self.thread.start()
 
   def run(self):
-    print(self.board)
+    if not self.run_as_gui:
+      print(self.board)
     self.turn_start = time.process_time()
     self.game_running = True
     while not self.game_over:
       time.sleep(.05)
+      with self.lock:
+        is_player_one_checkmated = self.board.is_checkmated(self.player_one.get_color())
+        is_player_two_checkmated = self.board.is_checkmated(self.player_one.get_color())
       if self.current_turn is self.player_one:
         if self.player_data[self.player_one]['time_elapsed'] > self.time_per_player:
           self.game_over = True
           self.winner = self.player_two
-        elif self.board.is_checkmated(self.player_one.get_color()):
+        elif is_player_one_checkmated:
           print('Checkmate!')
           self.game_over = True
           self.winner = self.player_two
@@ -90,7 +110,7 @@ class Game:
         if self.player_data[self.player_two]['time_elapsed'] > self.time_per_player:
           self.game_over = True
           self.winner = self.player_one
-        elif self.board.is_checkmated(self.player_two.get_color()):
+        elif is_player_two_checkmated:
           print('Checkmate!')
           self.game_over = True
           self.winner = self.player_one
