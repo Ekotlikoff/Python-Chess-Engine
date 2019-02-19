@@ -6,4 +6,8 @@ TODO:
 - insufficient material detection
 - smarter chess engine
 - too many repeated moves
-- UI?
+- improve UI (migrate away from tkinter?)
+  - click and drag
+  - view time
+  - surrender
+  - next game)
